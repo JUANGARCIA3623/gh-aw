@@ -1,3 +1,89 @@
+#!/usr/bin/env python3
+"""
+euniprincez Digital v2026 — Instalador automatizado de Arduino CLI
+
+titular de los Derechos: Juan Valentín garcía Espinoza
+Identificador Legal: gaej940310hsprsn02 
+ecosistema: SBE-GAEJ Core System
+jurisdicción: San Luis Potosí, México
+
+"""
+
+import os
+import subprocess
+import shutil
+import sys
+import urllib.request
+
+def instalar_arduino_cli():
+    print("[*] Iniciando automatización de entorno para Euniprincez Digital v2026...")
+    
+    # 1. Descargar el script oficial de instalación de Arduino CLI
+    install_url = "https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh"
+    print("[*] Descargando script de instalación remoto...")
+    
+    try:
+        with urllib.request.urlopen(install_url) as response:
+            install_script = response.read().decode('utf-8')
+        
+        # Ejecutar el script descargado pasándoselo al intérprete 'sh'
+        print("[*] Ejecutando script de instalación...")
+        proceso = subprocess.run(['sh'], input=install_script, text=True, capture_output=True)
+        
+        if proceso.returncode != 0:
+            print(f"[!] Error crítico en el instalador: {proceso.stderr}")
+            sys.exit(1)
+            
+    except Exception as e:
+        print(f"[!] Fallo de red o ejecución: {e}")
+        sys.exit(1)
+
+    # 2. Determinar la ruta global de comandos (Soporte nativo para Termux $PREFIX o Linux)
+    prefix = os.environ.get('PREFIX')
+    if prefix:
+        destino_bin = os.path.join(prefix, 'bin')
+    else:
+        destino_bin = '/usr/local/bin'
+        
+    os.makedirs(destino_bin, exist_ok=True)
+    
+    origen_ejecutable = os.path.join('bin', 'arduino-cli')
+    destino_ejecutable = os.path.join(destino_bin, 'arduino-cli')
+    
+    print(f"[*] Moviendo binario a la ruta global: {destino_ejecutable}")
+    if os.path.exists(origen_ejecutable):
+        shutil.move(origen_ejecutable, destino_ejecutable)
+        # Otorgar permisos de ejecución explícitos (chmod +x)
+        os.chmod(destino_ejecutable, 0o755)
+    else:
+        print("[!] No se encontró el ejecutable en la ruta temporal 'bin/'.")
+        sys.exit(1)
+
+    # 3. Limpieza segura de la carpeta temporal 'bin'
+    print("[*] Limpiando archivos temporales...")
+    if os.path.exists('bin'):
+        shutil.rmtree('bin')
+
+    # 4. Actualizar el índice de tarjetas e instalar el núcleo AVR (Uno, Nano, Mega)
+    print("[*] Actualizando índice de núcleos en arduino-cli...")
+    res_update = subprocess.run(['arduino-cli', 'core', 'update-index'], capture_output=True, text=True)
+    if res_update.returncode != 0:
+        print(f"[!] Advertencia al actualizar el índice: {res_update.stderr}")
+
+    print("[*] Instalando núcleo arduino:avr...")
+    res_install = subprocess.run(['arduino-cli', 'core', 'install', 'arduino:avr'], capture_output=True, text=True)
+    if res_install.returncode != 0:
+        print(f"[!] Error al instalar el núcleo AVR: {res_install.stderr}")
+        sys.exit(1)
+
+    print("\n[+] ¡Configuración completada con éxito!")
+    print(f"[+] Propietario Registrado: Juan Valentín García Espinoza (ID: GAEJ940310HSPRSN02)")
+
+if __name__ == '__main__':
+    instalar_arduino_cli()
+
+
+
 Thanks for helping make GitHub safe for everyone.
 
 # Security
